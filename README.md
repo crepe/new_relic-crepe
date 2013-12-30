@@ -10,26 +10,14 @@ In your application's Gemfile:
 gem 'new_relic-crepe'
 ```
 
-In your APIs:
+## Usage
 
-```ruby
-require 'new_relic-crepe'
+That's it. Any class that subclasses `Crepe::API` will automatically
+receive the `NewRelic::Agent::Instrumentation::Crepe` middleware and
+will report data to New Relic in the production environment.
 
-class MyAPI < Crepe::API
-  use NewRelic::Agent::Instrumentation::Crepe
-
-  get do
-    # Reported as 'GET /'
-  end
-
-  namespace :users do
-    get do
-      # Reported as 'GET /users'
-    end
-  end
-end
-```
-
+For more information on how to use New Relic, see their
+[Ruby documentation][new_relic]
 
 ## Contributing
 
@@ -40,3 +28,4 @@ end
 5. Create a Pull Request
 
 [crepe]: https://github.com/stephencelis/crepe
+[new_relic]: http://docs.newrelic.com/docs/ruby/

@@ -7,6 +7,8 @@ describe NewRelic::Agent::Instrumentation::Crepe do
       use NewRelic::Agent::Instrumentation::Crepe
 
       get '/:name' do
+        # For some reason, this doesn't get set in the test environment.
+        request.env['REQUEST_PATH'] = "/#{params[:name]}"
         { hello: params[:name] }
       end
     end

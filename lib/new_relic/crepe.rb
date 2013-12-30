@@ -33,7 +33,7 @@ module NewRelic
         end
 
         def request_path
-          @env['PATH_INFO'].dup.tap do |path|
+          @env['REQUEST_PATH'].dup.tap do |path|
             @env['rack.routing_args'].except(:format).each do |param, arg|
               path.sub!(arg, ":#{param}")
             end
@@ -48,6 +48,31 @@ module NewRelic
 
         def transaction_name
           "#{request_method} #{request_path}#{request_format}"
+        end
+      end
+    end
+  end
+end
+
+DependencyDetection.defer do
+  @name = :crepe
+
+  depends_on do
+    defined?(::Crepe) && !::NewRelic::Agent.config[:disable_crepe]
+  end
+
+  executes do
+    ::NewRelic::Agent.logger.info 'Installing Crepe instrumentation'
+  end
+
+  executes do
+    ::Crepe::API.class_eval do
+      class << self
+        alias_method :old_inherited, :inherited
+
+        def inherited(subclass)
+          old_inherited(subclass)
+          subclass.use ::NewRelic::Agent::Instrumentation::Crepe
         end
       end
     end
