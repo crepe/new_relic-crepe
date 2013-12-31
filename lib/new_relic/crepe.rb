@@ -47,11 +47,8 @@ module NewRelic
         end
 
         def request_version
-          if @env['rack.routing_args'][:version]
-            version = "/#{@env['rack.routing_args'][:version][:level]}"
-
-            # If versioned via the request path, we don't want to be redundant.
-            return version unless request_path.start_with?(version)
+          if version = @env['rack.routing_args'][:version]
+            "/#{version[:level]}" unless version[:with] == :path
           end
         end
 
@@ -81,9 +78,18 @@ DependencyDetection.defer do
 
         def inherited(subclass)
           old_inherited(subclass)
-          subclass.use ::NewRelic::Agent::Instrumentation::Crepe
+          middleware = ::NewRelic::Agent::Instrumentation::Crepe
+
+          used = subclass.ancestors.any? do |klass|
+            next unless klass.ancestors.include?(Crepe::API)
+            klass.config[:middleware].flatten.include? middleware
+          end
+
+          subclass.use(middleware) unless used
         end
       end
     end
   end
 end
+
+DependencyDetection.detect!
