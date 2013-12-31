@@ -34,20 +34,29 @@ module NewRelic
 
         def request_path
           @env['REQUEST_PATH'].dup.tap do |path|
-            @env['rack.routing_args'].except(:format).each do |param, arg|
+            @env['rack.routing_args'].except(:format, :version).each do |param, arg|
               path.sub!(arg, ":#{param}")
             end
           end
         end
 
         def request_format
-          if @format = @env['rack.routing_args'][:format]
-            ".#{@format}"
+          if format = @env['rack.routing_args'][:format]
+            ".#{format}"
+          end
+        end
+
+        def request_version
+          if @env['rack.routing_args'][:version]
+            version = "/#{@env['rack.routing_args'][:version][:level]}"
+
+            # If versioned via the request path, we don't want to be redundant.
+            return version unless request_path.start_with?(version)
           end
         end
 
         def transaction_name
-          "#{request_method} #{request_path}#{request_format}"
+          "#{request_method} #{request_version}#{request_path}#{request_format}"
         end
       end
     end
