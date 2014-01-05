@@ -33,7 +33,7 @@ module NewRelic
         end
 
         def request_path
-          @env['REQUEST_PATH'].dup.tap do |path|
+          @env['PATH_INFO'].dup.tap do |path|
             @env['rack.routing_args'].except(:format, :version).each do |param, arg|
               path.sub!(arg, ":#{param}")
             end
