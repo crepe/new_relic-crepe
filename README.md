@@ -12,8 +12,8 @@ gem 'new_relic-crepe'
 
 ## Usage
 
-Your `Crepe::API` classes will automatically use the
-`NewRelic::Agent::Instrumentation::Crepe` middleware and
+That's it. Any class that subclasses `Crepe::API` will automatically
+receive the `NewRelic::Agent::Instrumentation::Crepe` middleware and
 will report data to New Relic in the production environment.
 
 For more information on how to use New Relic, see their
@@ -27,5 +27,5 @@ For more information on how to use New Relic, see their
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create a Pull Request
 
-[crepe]: https://github.com/stephencelis/crepe
+[crepe]: https://github.com/crepe/crepe
 [new_relic]: http://docs.newrelic.com/docs/ruby/

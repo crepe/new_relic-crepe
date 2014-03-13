@@ -31,24 +31,23 @@ describe NewRelic::Agent::Instrumentation::Crepe do
 
     get '/hello/david'
 
-    last_response.status.should == 200
-    last_response.body.should == '{"hello":"david"}'
+    expect(last_response.status).to eq(200)
+    expect(last_response.body).to eq('{"hello":"david"}')
   end
 
   it 'correctly sets transaction name when not versioned' do
-    NewRelic::Agent.should_receive(:set_transaction_name).with('GET /hello/:name')
+    expect(NewRelic::Agent).to receive(:set_transaction_name).with('GET /hello/:name')
     get '/hello/david'
   end
 
   it 'correctly sets the transaction name when versioned via a header' do
-    NewRelic::Agent.should_receive(:set_transaction_name).with('GET /v1/hello')
+    expect(NewRelic::Agent).to receive(:set_transaction_name).with('GET /v1/hello')
     get :hello, {}, 'HTTP_ACCEPT' => 'application/vnd.myapp-v1+json'
   end
 
   it 'correctly sets the transaction name when versioned via the path' do
-    NewRelic::Agent.should_receive(:set_transaction_name).with('GET /v2/hello')
+    expect(NewRelic::Agent).to receive(:set_transaction_name).with('GET /v2/hello')
     get '/v2/hello'
   end
 
 end
-
