@@ -16,7 +16,7 @@ module NewRelic
           @newrelic_request = ::Rack::Request.new(@env)
 
           trace_options = {
-            :category => :sinatra,
+            :category => :rack,
             :request  => @newrelic_request,
             :params   => @newrelic_request.params
           }
