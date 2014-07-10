@@ -27,12 +27,14 @@ describe NewRelic::Agent::Instrumentation::Crepe do
   end
 
   it 'traces actions with New Relic' do
-    NewRelic::Agent::Instrumentation::Crepe.any_instance.should_receive(:perform_action_with_newrelic_trace).and_yield
+    expect_any_instance_of(NewRelic::Agent::Instrumentation::Crepe).to(
+      receive(:perform_action_with_newrelic_trace).and_yield
+    )
 
     get '/hello/david'
 
     expect(last_response.status).to eq(200)
-    expect(last_response.body).to eq('{"hello":"david"}')
+    expect(last_response.body).to   eq('{"hello":"david"}')
   end
 
   it 'correctly sets transaction name when not versioned' do

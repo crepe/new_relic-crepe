@@ -16,9 +16,9 @@ module NewRelic
           @newrelic_request = ::Rack::Request.new(@env)
 
           trace_options = {
-            :category => :rack,
-            :request  => @newrelic_request,
-            :params   => @newrelic_request.params
+            category: :rack,
+            request:  @newrelic_request,
+            params:   @newrelic_request.params
           }
 
           perform_action_with_newrelic_trace(trace_options) do

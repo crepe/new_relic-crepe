@@ -1,6 +1,5 @@
 # encoding: utf-8
-lib = File.expand_path('../lib', __FILE__)
-$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
+$LOAD_PATH.unshift(File.expand_path('../lib', __FILE__))
 require 'new_relic/crepe/version'
 
 Gem::Specification.new do |s|
@@ -13,13 +12,17 @@ Gem::Specification.new do |s|
   s.homepage      = 'https://github.com/davidcelis/new_relic-crepe'
   s.license       = 'MIT'
 
-  s.files         = Dir['lib/**/*.rb']
-  s.test_files    = s.files.grep(%r{^(test|spec|features)/})
   s.require_paths = ['lib']
 
-  s.add_dependency 'newrelic_rpm'
-  s.add_dependency 'crepe'
+  s.files         = Dir['lib/**/*.rb']
+  s.test_files    = Dir['spec/**/*.rb']
 
-  s.add_development_dependency 'rspec'
-  s.add_development_dependency 'rack-test'
+  # We can only support the same Ruby versions as Crêpe itself, after all.
+  s.required_ruby_version = '>= 2.0.0'
+
+  s.add_dependency 'newrelic_rpm', '>= 3.9.0.229'
+  s.add_dependency 'crepe', '>= 0.0.1.pre'
+
+  s.add_development_dependency 'rspec', '~> 3.0'
+  s.add_development_dependency 'rack-test', '~> 0.6'
 end
