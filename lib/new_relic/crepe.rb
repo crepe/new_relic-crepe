@@ -1,4 +1,5 @@
-require 'new_relic/agent/instrumentation/controller_instrumentation'
+require 'newrelic_rpm'
+require 'dependency_detection'
 require 'new_relic/crepe/version'
 
 module NewRelic
@@ -23,7 +24,14 @@ module NewRelic
 
           perform_action_with_newrelic_trace(trace_options) do
             @app_response = @app.call(@env)
-            NewRelic::Agent.set_transaction_name(transaction_name)
+
+            case @app_response.first
+            when 404
+              NewRelic::Agent::Transaction.tl_current.ignore!
+            else
+              NewRelic::Agent.set_transaction_name(transaction_name)
+            end
+
             return @app_response
           end
         end
