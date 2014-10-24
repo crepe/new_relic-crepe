@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.files         = Dir['lib/**/*.rb']
   s.test_files    = Dir['spec/**/*.rb']
 
-  # We can only support the same Ruby versions as Crêpe itself, after all.
+  # We can only support the same Ruby versions as Crepe itself, after all.
   s.required_ruby_version = '>= 2.0.0'
 
   s.add_dependency 'newrelic_rpm', '>= 3.9.0.229'

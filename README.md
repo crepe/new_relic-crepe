@@ -1,6 +1,6 @@
 # NewRelic::Crepe
 
-New Relic Instrumentation for [Crêpe][crepe], the thin API stack.
+New Relic Instrumentation for [Crepe][crepe], the thin API stack.
 
 ## Installation
 
