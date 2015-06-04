@@ -10,17 +10,10 @@ describe NewRelic::Agent::Instrumentation::Crepe do
         { hello: params[:name] }
       end
 
-      version :v1, with: :header, vendor: 'myapp' do
+      namespace :v1 do
         get :hello do
-          request.env['REQUEST_PATH'] = "/hello"
+          request.env['REQUEST_PATH'] = "/v1/hello"
           { hello: :world }
-        end
-      end
-
-      version :v2 do
-        get :hello do
-          request.env['REQUEST_PATH'] = "/v2/hello"
-          { hello: :World }
         end
       end
     end
@@ -37,19 +30,20 @@ describe NewRelic::Agent::Instrumentation::Crepe do
     expect(last_response.body).to   eq('{"hello":"david"}')
   end
 
-  it 'correctly sets transaction name when not versioned' do
+  it 'correctly sets transaction name' do
     expect(NewRelic::Agent).to receive(:set_transaction_name).with('GET /hello/:name')
     get '/hello/david'
   end
 
-  it 'correctly sets the transaction name when versioned via a header' do
+  it 'does not replace namespaces in the transaction name' do
     expect(NewRelic::Agent).to receive(:set_transaction_name).with('GET /v1/hello')
-    get :hello, {}, 'HTTP_ACCEPT' => 'application/vnd.myapp-v1+json'
+    get '/v1/hello'
   end
 
-  it 'correctly sets the transaction name when versioned via the path' do
-    expect(NewRelic::Agent).to receive(:set_transaction_name).with('GET /v2/hello')
-    get '/v2/hello'
-  end
+  it 'ignores transactions that are 404s' do
+    txn = double(ignore!: true)
+    expect(NewRelic::Agent::Transaction).to receive(:tl_current).and_return(txn)
 
+    get '/bogus'
+  end
 end
