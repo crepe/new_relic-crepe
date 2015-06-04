@@ -25,9 +25,8 @@ module NewRelic
           perform_action_with_newrelic_trace(trace_options) do
             @app_response = @app.call(@env)
 
-            case @app_response.first
-            when 404
-              NewRelic::Agent::Transaction.tl_current.ignore!
+            if @app_response.first == 404
+              NewRelic::Agent.ignore_transaction
             else
               NewRelic::Agent.set_transaction_name(transaction_name)
             end

@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
   # We can only support the same Ruby versions as Crepe itself, after all.
   s.required_ruby_version = '>= 2.1.0'
 
-  s.add_dependency 'newrelic_rpm', '>= 3.9.0.229'
+  s.add_dependency 'newrelic_rpm', '>= 3.9.2'
   s.add_dependency 'crepe', '>= 0.0.1.pre'
 
   s.add_development_dependency 'rspec', '~> 3.0'

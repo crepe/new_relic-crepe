@@ -41,8 +41,7 @@ describe NewRelic::Agent::Instrumentation::Crepe do
   end
 
   it 'ignores transactions that are 404s' do
-    txn = double(ignore!: true)
-    expect(NewRelic::Agent::Transaction).to receive(:tl_current).and_return(txn)
+    expect(NewRelic::Agent).to receive(:ignore_transaction)
 
     get '/bogus'
   end
