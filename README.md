@@ -12,9 +12,19 @@ gem 'new_relic-crepe'
 
 ## Usage
 
-That's it. Any class that subclasses `Crepe::API` will automatically
-receive the `NewRelic::Agent::Instrumentation::Crepe` middleware and
-will report data to New Relic in the production environment.
+That's it. Any class that subclasses `Crepe::API` will report in the correct transaction name, based on the request method and PATH. Additionally, query parameters will be sent to New Relic. If you have sensitive parameters, such as passwords or other pieces of personal information, it's recommended that you filter them by adding a NewRelic::Crepe specific configuration option to the agent:
+
+```yaml
+# config/newrelic.yml
+
+common: &default_settings
+  # Filter sensitive parameters (this is Crepe specific)
+  filtered_params:
+    - password
+    - ccv
+    - ssn
+    # etc.
+```
 
 For more information on how to use New Relic, see their
 [Ruby documentation][new_relic]

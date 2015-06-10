@@ -4,3 +4,4 @@ source 'https://rubygems.org'
 gemspec
 
 gem 'crepe', github: 'crepe/crepe'
+gem 'pry'

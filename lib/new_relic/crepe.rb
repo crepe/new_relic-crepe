@@ -1,64 +1,64 @@
 require 'newrelic_rpm'
-require 'dependency_detection'
-require 'new_relic/crepe/version'
+require 'new_relic/agent/parameter_filtering'
+require 'pry'
 
 module NewRelic
   module Agent
     module Instrumentation
-      class Crepe
-        include ControllerInstrumentation
+      module Crepe
+        extend self
 
-        def initialize(app)
-          @app = app
-        end
-
-        def call(env)
-          @env = env
-          @newrelic_request = ::Rack::Request.new(@env)
-
-          trace_options = {
-            category: :rack,
-            request:  @newrelic_request,
-            params:   @newrelic_request.params
-          }
-
-          perform_action_with_newrelic_trace(trace_options) do
-            @app_response = @app.call(@env)
-
-            if @app_response.first == 404
-              NewRelic::Agent.ignore_transaction
-            else
-              NewRelic::Agent.set_transaction_name(transaction_name)
-            end
-
-            return @app_response
+        def handle_transaction(response, env)
+          case response.first
+          when 404
+            ::NewRelic::Agent.ignore_transaction
+          else
+            name_transaction(env)
+            capture_params(env)
           end
         end
 
-        def request_method
-          @env['REQUEST_METHOD']
+        private
+
+        def name_transaction(env)
+          ::NewRelic::Agent.set_transaction_name(name_for_transaction(env))
         end
 
-        def request_path
-          (@env['REQUEST_PATH'] || @env['PATH_INFO']).dup.tap do |path|
+        def name_for_transaction(env)
+          routing_args = env['rack.routing_args'] || {}
+
+          request_path = env['PATH_INFO'].dup.tap do |path|
             routing_args.except(:format, :namespace).each do |param, arg|
               path.sub!(arg.to_s, ":#{param}")
             end
           end
+
+          request_method = env['REQUEST_METHOD']
+          request_format = routing_args[:format]
+
+          "#{request_method} #{request_path}"
         end
 
-        def request_format
-          if format = routing_args[:format]
-            ".#{format}"
+        def capture_params(env)
+          txn = Transaction.tl_current
+
+          params = env['rack.request.query_hash'] || {}
+          params = params.except(:format, :namespace)
+          params = ParameterFiltering.apply_filters(env, params)
+          params = filter_params(params)
+
+          txn.filtered_params = params
+          txn.merge_request_parameters(params)
+        end
+
+        def filter_params(params)
+          params.each do |k, v|
+            params[k] = '[FILTERED]' if filtered_params.include?(k.to_s)
           end
         end
 
-        def transaction_name
-          "#{request_method} #{request_path}#{request_format}"
-        end
-
-        def routing_args
-          @routing_args ||= (@env['rack.routing_args'] || {})
+        def filtered_params
+          NewRelic::Agent.config[:filtered_params]
         end
       end
     end
@@ -66,35 +66,38 @@ module NewRelic
 end
 
 DependencyDetection.defer do
-  @name = :crepe
+  named :crepe
 
   depends_on do
-    defined?(::Crepe) && !::NewRelic::Agent.config[:disable_crepe]
+    defined?(::Crepe) && !NewRelic::Agent.config[:disable_crepe]
   end
 
   executes do
-    ::NewRelic::Agent.logger.info 'Installing Crepe instrumentation'
+    NewRelic::Agent.logger.info 'Installing Crepe instrumentation'
+    instrument_call
   end
 
-  executes do
-    ::Crepe::API.class_eval do
-      class << self
-        alias_method :old_inherited, :inherited
-
-        def inherited(subclass)
-          old_inherited(subclass)
-          middleware = ::NewRelic::Agent::Instrumentation::Crepe
-
-          used = subclass.ancestors.any? do |klass|
-            next unless klass.ancestors.include?(Crepe::API)
-            klass.config[:middleware].flatten.include? middleware
+  def instrument_call
+    class << ::Crepe::API
+      def call_with_new_relic(env)
+        begin
+          response = call_without_new_relic(env)
+        ensure
+          begin
+            ::NewRelic::Agent::Instrumentation::Crepe.handle_transaction(response, env)
+          rescue => e
+            ::NewRelic::Agent.logger.warn('Error in Crepe instrumentation', e)
           end
-
-          subclass.use(middleware) unless used
         end
+
+        response
       end
+
+      alias_method :call_without_new_relic, :call
+      alias_method :call, :call_with_new_relic
     end
   end
+
 end
 
 DependencyDetection.detect!
