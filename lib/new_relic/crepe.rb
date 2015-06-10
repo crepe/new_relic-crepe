@@ -41,26 +41,24 @@ module NewRelic
 
         def request_path
           (@env['REQUEST_PATH'] || @env['PATH_INFO']).dup.tap do |path|
-            @env['rack.routing_args'].except(:format, :namespace).each do |param, arg|
+            routing_args.except(:format, :namespace).each do |param, arg|
               path.sub!(arg.to_s, ":#{param}")
             end
           end
         end
 
         def request_format
-          if format = @env['rack.routing_args'][:format]
+          if format = routing_args[:format]
             ".#{format}"
           end
         end
 
-        def request_version
-          if version = @env['rack.routing_args'][:version]
-            "/#{version[:level]}" unless version[:with] == :path
-          end
+        def transaction_name
+          "#{request_method} #{request_path}#{request_format}"
         end
 
-        def transaction_name
-          "#{request_method} #{request_version}#{request_path}#{request_format}"
+        def routing_args
+          @routing_args ||= (@env['rack.routing_args'] || {})
         end
       end
     end
