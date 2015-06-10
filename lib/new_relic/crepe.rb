@@ -1,4 +1,5 @@
 require 'newrelic_rpm'
+require 'crepe'
 
 module NewRelic
   module Agent

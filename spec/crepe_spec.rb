@@ -4,9 +4,6 @@ require 'new_relic/crepe'
 describe NewRelic::Agent::Instrumentation::Crepe do
   let(:app) do
     Class.new(Crepe::API) do
-      # For some reason, this doesn't get set in the test environment.
-      before { request.env['REQUEST_PATH'] = request.path }
-
       get '/hello/:name' do
         { hello: params[:name] }
       end
