@@ -19,12 +19,6 @@ describe NewRelic::Agent::Instrumentation::Crepe do
     end
   end
 
-  before do
-    allow(NewRelic::Agent.config).to receive(:[]).
-                                     with(:filtered_params).
-                                     and_return(['password'])
-  end
-
   it 'correctly sets transaction name' do
     expect(NewRelic::Agent).to receive(:set_transaction_name).with('GET /hello/:name')
     get '/hello/david'
@@ -41,10 +35,12 @@ describe NewRelic::Agent::Instrumentation::Crepe do
     get '/bogus'
   end
 
-  it 'filters parameters' do
+  it 'captures parameters' do
     txn = double
-    expect(txn).to receive(:filtered_params=).with("password" => "[FILTERED]")
-    expect(txn).to receive(:merge_request_parameters).with("password" => "[FILTERED]")
+    expect(txn).to receive(:merge_request_parameters).with({
+      name: 'david',
+      'password' => 'secret'
+    })
 
     allow(txn).to receive(:make_transaction_name)
     allow(txn).to receive(:name_last_frame)
@@ -52,6 +48,6 @@ describe NewRelic::Agent::Instrumentation::Crepe do
 
     allow(NewRelic::Agent::Transaction).to receive(:tl_current).and_return(txn)
 
-    get '/hello/david', password: 'hi'
+    get '/hello/david', password: 'secret'
   end
 end

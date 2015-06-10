@@ -1,6 +1,4 @@
 require 'newrelic_rpm'
-require 'new_relic/agent/parameter_filtering'
-require 'pry'
 
 module NewRelic
   module Agent
@@ -8,57 +6,34 @@ module NewRelic
       module Crepe
         extend self
 
-        def handle_transaction(response, env)
+        def handle_transaction(request, response)
           case response.first
           when 404
             ::NewRelic::Agent.ignore_transaction
           else
-            name_transaction(env)
-            capture_params(env)
+            name_transaction(request)
+            merge_request_params(request)
           end
         end
 
         private
 
-        def name_transaction(env)
-          ::NewRelic::Agent.set_transaction_name(name_for_transaction(env))
-        end
+        def name_transaction(request)
+          routing_args = request.env['rack.routing_args'] || {}
 
-        def name_for_transaction(env)
-          routing_args = env['rack.routing_args'] || {}
-
-          request_path = env['PATH_INFO'].dup.tap do |path|
+          request_path = request.path.dup.tap do |path|
             routing_args.except(:format, :namespace).each do |param, arg|
               path.sub!(arg.to_s, ":#{param}")
             end
           end
 
-          request_method = env['REQUEST_METHOD']
-          request_format = routing_args[:format]
-
-          "#{request_method} #{request_path}"
+          ::NewRelic::Agent.set_transaction_name("#{request.method} #{request_path}")
         end
 
-        def capture_params(env)
-          txn = Transaction.tl_current
+        def merge_request_params(request)
+          return unless Transaction.tl_current
 
-          params = env['rack.request.query_hash'] || {}
-          params = params.except(:format, :namespace)
-          params = ParameterFiltering.apply_filters(env, params)
-          params = filter_params(params)
-
-          txn.filtered_params = params
-          txn.merge_request_parameters(params)
-        end
-
-        def filter_params(params)
-          params.each do |k, v|
-            params[k] = '[FILTERED]' if filtered_params.include?(k.to_s)
-          end
-        end
-
-        def filtered_params
-          NewRelic::Agent.config[:filtered_params]
+          Transaction.tl_current.merge_request_parameters(request.params)
         end
       end
     end
@@ -81,10 +56,11 @@ DependencyDetection.defer do
     class << ::Crepe::API
       def call_with_new_relic(env)
         begin
+          request = ::Crepe::Request.new(env)
           response = call_without_new_relic(env)
         ensure
           begin
-            ::NewRelic::Agent::Instrumentation::Crepe.handle_transaction(response, env)
+            ::NewRelic::Agent::Instrumentation::Crepe.handle_transaction(request, response)
           rescue => e
             ::NewRelic::Agent.logger.warn('Error in Crepe instrumentation', e)
           end
