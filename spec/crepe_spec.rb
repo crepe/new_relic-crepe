@@ -1,3 +1,4 @@
+# encoding: utf-8
 require 'spec_helper'
 require 'new_relic/crepe'
 
@@ -17,12 +18,12 @@ describe NewRelic::Agent::Instrumentation::Crepe do
   end
 
   it 'correctly sets transaction name' do
-    expect(NewRelic::Agent).to receive(:set_transaction_name).with('GET /hello/:name')
+    expect(NewRelic::Agent).to receive(:set_transaction_name).with('GET  ⁄ hello ⁄ :name', category: :uri)
     get '/hello/david'
   end
 
   it 'does not replace namespaces in the transaction name' do
-    expect(NewRelic::Agent).to receive(:set_transaction_name).with('GET /v1/hello')
+    expect(NewRelic::Agent).to receive(:set_transaction_name).with('GET  ⁄ v1 ⁄ hello', category: :uri)
     get '/v1/hello'
   end
 

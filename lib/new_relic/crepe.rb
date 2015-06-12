@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 require 'newrelic_rpm'
 require 'crepe'
 
@@ -28,7 +30,12 @@ module NewRelic
             end
           end
 
-          ::NewRelic::Agent.set_transaction_name("#{request.method} #{request_path}")
+          # New Relic doesn't like normal slashes. That thing may look like a
+          # weird, wonky backtick... But in the browser, it displays as a slash
+          # with a small width (hence the outer spaces).
+          name = "#{request.method} #{request_path.gsub('/', ' ⁄ ')}"
+
+          ::NewRelic::Agent.set_transaction_name(name, category: :uri)
         end
 
         def merge_request_params(request)
